@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, TextInput, ScrollView } from 'react-native';
 import { Point } from '../../types/game';
 import { getInitialPoints } from '../../utils/gameLogic';
 
@@ -12,10 +12,16 @@ interface GameStateDebugProps {
     blackBorneOff: number,
     currentPlayer: number
   ) => void;
+  dice1: number;
+  dice2: number;
+  onSetDice: (dice1: number, dice2: number) => void;
+  onResetGame: () => void;
 }
 
-const GameStateDebug: React.FC<GameStateDebugProps> = ({ onSetGameState }) => {
+const GameStateDebug: React.FC<GameStateDebugProps> = ({ onSetGameState, dice1, dice2, onSetDice, onResetGame }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [diceInput1, setDiceInput1] = useState<string>('');
+  const [diceInput2, setDiceInput2] = useState<string>('');
 
   const createEmptyBoard = (): Point[] => {
     return Array.from({ length: 24 }, (_, i) => ({
@@ -159,6 +165,17 @@ const GameStateDebug: React.FC<GameStateDebugProps> = ({ onSetGameState }) => {
     onSetGameState(state.points, state.whiteBar, state.blackBar, state.whiteBorneOff, state.blackBorneOff, 1);
   };
 
+  const handleDiceSet = () => {
+    const val1 = parseInt(diceInput1, 10);
+    const val2 = parseInt(diceInput2, 10);
+
+    if (val1 >= 1 && val1 <= 6 && val2 >= 1 && val2 <= 6) {
+      onSetDice(val1, val2);
+      setDiceInput1('');
+      setDiceInput2('');
+    }
+  };
+
   return (
     <>
       <Pressable
@@ -171,26 +188,65 @@ const GameStateDebug: React.FC<GameStateDebugProps> = ({ onSetGameState }) => {
       <Modal
         visible={isExpanded}
         transparent={true}
-        animationType="fade"
+        animationType="none"
         supportedOrientations={['landscape-left', 'landscape-right']}
         onRequestClose={() => setIsExpanded(false)}
       >
-        <Pressable 
-          style={styles.modalOverlay}
-          onPress={() => setIsExpanded(false)}
-        >
+        <View style={styles.modalOverlayContainer}>
+          <View style={styles.modalOverlay} />
           <Pressable 
-            style={styles.modalContent}
-            onPress={(e) => e.stopPropagation()}
-          >
+            style={StyleSheet.absoluteFill}
+            onPress={() => setIsExpanded(false)}
+          />
+          <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Game State Debug</Text>
+              <Text style={styles.modalTitle}>Debug Settings</Text>
               <Pressable onPress={() => setIsExpanded(false)}>
                 <Text style={styles.closeButton}>✕</Text>
               </Pressable>
             </View>
 
-            <Text style={styles.label}>Preset Positions</Text>
+            <ScrollView 
+              style={styles.scrollView} 
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={styles.scrollContent}
+              nestedScrollEnabled={true}
+            >
+              <Text style={styles.label}>Manual Dice Entry</Text>
+              <View style={styles.inputRow}>
+                <TextInput
+                  style={styles.input}
+                  value={diceInput1}
+                  onChangeText={setDiceInput1}
+                  placeholder="Dice 1 (1-6)"
+                  keyboardType="numeric"
+                  maxLength={1}
+                  placeholderTextColor="#999"
+                />
+                <TextInput
+                  style={styles.input}
+                  value={diceInput2}
+                  onChangeText={setDiceInput2}
+                  placeholder="Dice 2 (1-6)"
+                  keyboardType="numeric"
+                  maxLength={1}
+                  placeholderTextColor="#999"
+                />
+              </View>
+              <Pressable style={styles.button} onPress={handleDiceSet}>
+                <Text style={styles.buttonText}>Set Dice</Text>
+              </Pressable>
+              <Text style={styles.currentDiceText}>Current: {dice1 > 0 ? dice1 : '-'} / {dice2 > 0 ? dice2 : '-'}</Text>
+
+              <View style={styles.divider} />
+
+              <Pressable style={styles.resetButton} onPress={() => { onResetGame(); setIsExpanded(false); }}>
+                <Text style={styles.buttonText}>Reset Game</Text>
+              </Pressable>
+
+              <View style={styles.divider} />
+
+              <Text style={styles.label}>Preset Positions</Text>
             
             <Pressable style={styles.button} onPress={() => { handleSetStarting(); setIsExpanded(false); }}>
               <Text style={styles.buttonText}>Starting Position</Text>
@@ -217,8 +273,9 @@ const GameStateDebug: React.FC<GameStateDebugProps> = ({ onSetGameState }) => {
                 <Text style={styles.buttonText}>30</Text>
               </Pressable>
             </View>
-          </Pressable>
-        </Pressable>
+            </ScrollView>
+          </View>
+        </View>
       </Modal>
     </>
   );
@@ -241,11 +298,14 @@ const styles = StyleSheet.create({
   iconText: {
     fontSize: 18,
   },
-  modalOverlay: {
+  modalOverlayContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     backgroundColor: '#555',
@@ -253,6 +313,14 @@ const styles = StyleSheet.create({
     padding: 16,
     width: '80%',
     maxWidth: 300,
+    maxHeight: '80%',
+  },
+  scrollView: {
+    minHeight: 200,
+    maxHeight: 400,
+  },
+  scrollContent: {
+    paddingBottom: 8,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -303,6 +371,43 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: '#FFF',
+    height: 32,
+    textAlign: 'center',
+    fontSize: 12,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#CCC',
+    color: '#000',
+  },
+  currentDiceText: {
+    color: '#FFF',
+    fontSize: 10,
+    textAlign: 'center',
+    marginBottom: 8,
+    opacity: 0.7,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#777',
+    marginVertical: 12,
+  },
+  resetButton: {
+    backgroundColor: '#FF5722',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 4,
+    marginVertical: 4,
+    width: '100%',
+    alignItems: 'center',
   },
 });
 

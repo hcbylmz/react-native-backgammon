@@ -3,6 +3,8 @@ import { View, StyleSheet, Pressable, Text } from 'react-native';
 import WhiteChecker from '../checkers/WhiteChecker';
 import BlackChecker from '../checkers/BlackChecker';
 import { BearingOffAreaProps } from '../../types/game';
+import { BOARD_LAYOUT } from '../../utils/boardLayout';
+import { useCheckerPosition } from '../../contexts/CheckerPositionContext';
 
 const BearingOffArea: React.FC<BearingOffAreaProps> = ({
   whiteBorneOff,
@@ -11,8 +13,19 @@ const BearingOffArea: React.FC<BearingOffAreaProps> = ({
   isBearingOff,
   onPress,
 }) => {
+  const { setPosition } = useCheckerPosition();
+
+  const handleBearingOffLayout = (event: any) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
+    if (currentPlayer > 0) {
+      setPosition('bearing-off-white', { x, y, width, height });
+    } else {
+      setPosition('bearing-off-black', { x, y, width, height });
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={handleBearingOffLayout}>
       <View style={styles.topArea}>
         {whiteBorneOff > 0 && (
           <View style={styles.borneOffContainer}>
@@ -20,7 +33,7 @@ const BearingOffArea: React.FC<BearingOffAreaProps> = ({
             <View style={styles.checkerStack}>
               {Array.from({ length: Math.min(whiteBorneOff, 5) }).map((_, idx) => (
                 <View key={`white-borne-${idx}`} style={styles.checker}>
-                  <WhiteChecker width={20} height={20} />
+                  <WhiteChecker width={BOARD_LAYOUT.CHECKER_SIZE_BEARING_OFF} height={BOARD_LAYOUT.CHECKER_SIZE_BEARING_OFF} />
                 </View>
               ))}
             </View>
@@ -46,7 +59,7 @@ const BearingOffArea: React.FC<BearingOffAreaProps> = ({
             <View style={styles.checkerStack}>
               {Array.from({ length: Math.min(blackBorneOff, 5) }).map((_, idx) => (
                 <View key={`black-borne-${idx}`} style={styles.checker}>
-                  <BlackChecker width={20} height={20} />
+                  <BlackChecker width={BOARD_LAYOUT.CHECKER_SIZE_BEARING_OFF} height={BOARD_LAYOUT.CHECKER_SIZE_BEARING_OFF} />
                 </View>
               ))}
             </View>
@@ -60,7 +73,7 @@ const BearingOffArea: React.FC<BearingOffAreaProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: 60,
+    width: BOARD_LAYOUT.CENTER_COLUMN_WIDTH,
     backgroundColor: '#654321',
     flexShrink: 0,
     marginLeft: 0,
@@ -70,36 +83,36 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#8B4513',
     alignSelf: 'stretch',
-    maxHeight: '100%',
+    height: '100%',
   },
   topArea: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 8,
-    paddingHorizontal: 4,
+    paddingTop: BOARD_LAYOUT.BEARING_OFF_PADDING_TOP,
+    paddingHorizontal: BOARD_LAYOUT.BEARING_OFF_PADDING_HORIZONTAL,
   },
   bottomArea: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingBottom: 8,
-    paddingHorizontal: 4,
+    paddingBottom: BOARD_LAYOUT.BEARING_OFF_PADDING_BOTTOM,
+    paddingHorizontal: BOARD_LAYOUT.BEARING_OFF_PADDING_HORIZONTAL,
   },
   borneOffContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: BOARD_LAYOUT.BEARING_OFF_CONTAINER_GAP,
   },
   checkerStack: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: BOARD_LAYOUT.BEARING_OFF_CHECKER_STACK_GAP,
   },
   checker: {
-    marginVertical: 1,
+    marginVertical: BOARD_LAYOUT.BEARING_OFF_CHECKER_MARGIN_VERTICAL,
   },
   countText: {
     color: '#FFF',
@@ -108,15 +121,15 @@ const styles = StyleSheet.create({
   },
   bearingOffZone: {
     width: '90%',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: BOARD_LAYOUT.BEARING_OFF_ZONE_PADDING_VERTICAL,
+    paddingHorizontal: BOARD_LAYOUT.BEARING_OFF_ZONE_PADDING_HORIZONTAL,
     backgroundColor: '#90EE90',
     borderRadius: 4,
     borderWidth: 2,
     borderColor: '#32CD32',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 4,
+    marginVertical: BOARD_LAYOUT.BEARING_OFF_ZONE_MARGIN_VERTICAL,
   },
   bearingOffZoneTop: {
     alignSelf: 'flex-start',

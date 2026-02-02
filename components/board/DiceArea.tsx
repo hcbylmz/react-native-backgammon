@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Dice from '../dice/Dice';
-import DiceDebug from '../dice/DiceDebug';
+import { BOARD_LAYOUT } from '../../utils/boardLayout';
 
 interface DiceAreaProps {
   dice1: number;
@@ -12,8 +12,6 @@ interface DiceAreaProps {
   hasCrashed: boolean;
   gameEnded: boolean;
   onRollDice: () => void;
-  onSetDice: (dice1: number, dice2: number) => void;
-  onResetGame: () => void;
 }
 
 const DiceArea: React.FC<DiceAreaProps> = ({
@@ -25,16 +23,14 @@ const DiceArea: React.FC<DiceAreaProps> = ({
   hasCrashed,
   gameEnded,
   onRollDice,
-  onSetDice,
-  onResetGame,
 }) => {
   const allDiceUsed = usedDice.length >= (dice1 === dice2 ? 4 : 2);
 
   return (
     <View style={styles.diceArea}>
       <View style={styles.diceContainer}>
-        <Dice value={dice1} size={40} isRolling={isRolling} />
-        <Dice value={dice2} size={40} isRolling={isRolling} />
+        <Dice value={dice1} size={BOARD_LAYOUT.DICE_SIZE} isRolling={isRolling} />
+        <Dice value={dice2} size={BOARD_LAYOUT.DICE_SIZE} isRolling={isRolling} />
       </View>
       <TouchableOpacity
         style={styles.rollButton}
@@ -45,31 +41,25 @@ const DiceArea: React.FC<DiceAreaProps> = ({
           {dice1 === 0 ? 'Roll Dice' : 'Re-roll'}
         </Text>
       </TouchableOpacity>
-      <DiceDebug dice1={dice1} dice2={dice2} onSetDice={onSetDice} />
       <Text style={styles.playerText}>
         {gameEnded ? 'Game Over' : `${currentPlayer > 0 ? 'White' : 'Black'} to move${hasCrashed ? ' (Enter from bar)' : ''}`}
       </Text>
-      <TouchableOpacity
-        style={styles.resetButton}
-        onPress={onResetGame}
-      >
-        <Text style={styles.resetButtonText}>Reset Game</Text>
-      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   diceArea: {
-    width: '100%',
+    width: BOARD_LAYOUT.CENTER_COLUMN_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
+    paddingVertical: BOARD_LAYOUT.DICE_AREA_PADDING_VERTICAL,
+    flexShrink: 0,
   },
   diceContainer: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
+    gap: BOARD_LAYOUT.DICE_CONTAINER_GAP,
+    marginBottom: BOARD_LAYOUT.DICE_CONTAINER_MARGIN_BOTTOM,
   },
   rollButton: {
     backgroundColor: '#4CAF50',
@@ -87,18 +77,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: '600',
-  },
-  resetButton: {
-    backgroundColor: '#FF5722',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginTop: 8,
-  },
-  resetButtonText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
   },
 });
 

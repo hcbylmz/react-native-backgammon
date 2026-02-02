@@ -88,6 +88,11 @@ export const useDice = () => {
     return usedDice.length >= (dice1 === dice2 ? 4 : 2);
   };
 
+  const willAllDiceBeUsed = (newUsedDice: number[]): boolean => {
+    if (dice1 === 0 || dice2 === 0) return false;
+    return newUsedDice.length >= (dice1 === dice2 ? 4 : 2);
+  };
+
   return {
     dice1,
     dice2,
@@ -101,5 +106,6 @@ export const useDice = () => {
     setUsedDice: setUsedDiceDirectly,
     resetDice,
     allDiceUsed,
+    willAllDiceBeUsed,
   };
 };

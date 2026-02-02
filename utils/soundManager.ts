@@ -9,14 +9,10 @@ export const setSoundEnabled = (enabled: boolean) => {
 const playSound = async (soundSource: any, volume: number) => {
   if (!soundEnabled) return;
   try {
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout')), 2000)
-    );
-    const soundPromise = Audio.Sound.createAsync(soundSource, {
+    const { sound } = await Audio.Sound.createAsync(soundSource, {
       shouldPlay: true,
       volume,
     });
-    const { sound } = await Promise.race([soundPromise, timeoutPromise]) as any;
     sound.setOnPlaybackStatusUpdate((status) => {
       if (status.isLoaded && status.didJustFinish) {
         sound.unloadAsync();
@@ -26,37 +22,58 @@ const playSound = async (soundSource: any, volume: number) => {
   }
 };
 
+let diceRollSound: any = null;
+let moveSound: any = null;
+let hitSound: any = null;
+let winSound: any = null;
+let errorSound: any = null;
+
+try {
+  diceRollSound = require('../assets/sounds/dice-roll.mp3');
+} catch {}
+
+// try {
+//   moveSound = require('../assets/sounds/move.mp3');
+// } catch {}
+
+// try {
+//   hitSound = require('../assets/sounds/hit.mp3');
+// } catch {}
+
+// try {
+//   winSound = require('../assets/sounds/win.mp3');
+// } catch {}
+
+// try {
+//   errorSound = require('../assets/sounds/error.mp3');
+// } catch {}
+
 export const playDiceRollSound = async () => {
-  await playSound(
-    { uri: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav' },
-    0.5
-  );
+  if (diceRollSound) {
+    await playSound(diceRollSound, 0.5);
+  }
 };
 
 export const playMoveSound = async () => {
-  await playSound(
-    { uri: 'https://www.soundjay.com/misc/sounds/click-09.wav' },
-    0.3
-  );
+  if (moveSound) {
+    await playSound(moveSound, 0.3);
+  }
 };
 
 export const playHitSound = async () => {
-  await playSound(
-    { uri: 'https://www.soundjay.com/misc/sounds/click-10.wav' },
-    0.6
-  );
+  if (hitSound) {
+    await playSound(hitSound, 0.6);
+  }
 };
 
 export const playWinSound = async () => {
-  await playSound(
-    { uri: 'https://www.soundjay.com/misc/sounds/bell-ringing-05.wav' },
-    0.7
-  );
+  if (winSound) {
+    await playSound(winSound, 0.7);
+  }
 };
 
 export const playErrorSound = async () => {
-  await playSound(
-    { uri: 'https://www.soundjay.com/misc/sounds/beep-07a.wav' },
-    0.4
-  );
+  if (errorSound) {
+    await playSound(errorSound, 0.4);
+  }
 };

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import BaseModal from '../ui/BaseModal';
 
 interface FAQScreenProps {
   visible: boolean;
@@ -27,62 +28,30 @@ const FAQScreen: React.FC<FAQScreenProps> = ({ visible, onClose }) => {
   ];
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-      presentationStyle="overFullScreen"
-      supportedOrientations={['landscape-left', 'landscape-right']}
+      onClose={onClose}
+      title="Frequently Asked Questions"
+      animationType="none"
+      containerStyle={styles.modalContainer}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.title}>Frequently Asked Questions</Text>
-          
-          <ScrollView style={styles.scrollView}>
-            {faqs.map((faq, index) => (
-              <View key={index} style={styles.faqItem}>
-                <Text style={styles.question}>{faq.q}</Text>
-                <Text style={styles.answer}>{faq.a}</Text>
-              </View>
-            ))}
-          </ScrollView>
-
-          <Pressable
-            style={styles.closeButton}
-            onPress={onClose}
-          >
-            <Text style={styles.buttonText}>Close</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
+      <ScrollView style={styles.scrollView}>
+        {faqs.map((faq, index) => (
+          <View key={index} style={styles.faqItem}>
+            <Text style={styles.question}>{faq.q}</Text>
+            <Text style={styles.answer}>{faq.a}</Text>
+          </View>
+        ))}
+      </ScrollView>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   modalContainer: {
-    backgroundColor: '#D2B48C',
-    borderRadius: 20,
-    padding: 20,
     width: '90%',
     maxWidth: 500,
     maxHeight: '80%',
-    borderWidth: 3,
-    borderColor: '#8B4513',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#8B4513',
-    marginBottom: 20,
-    textAlign: 'center',
   },
   scrollView: {
     maxHeight: 400,
@@ -103,18 +72,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#654321',
     lineHeight: 20,
-  },
-  closeButton: {
-    backgroundColor: '#8B4513',
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

@@ -5,6 +5,7 @@ import Animated, { useAnimatedStyle, withSpring, withRepeat, withTiming, useShar
 import { Point as PointType } from '../../types/game';
 import WhiteChecker from '../checkers/WhiteChecker';
 import BlackChecker from '../checkers/BlackChecker';
+import { useCheckerPosition } from '../../contexts/CheckerPositionContext';
 
 interface PointProps {
   point: PointType;
@@ -31,6 +32,7 @@ const Point: React.FC<PointProps> = ({
   const isPlayer1 = point.checkers > 0;
   const pulseAnim = useSharedValue(1);
   const borderWidth = useSharedValue(0);
+  const { setPosition } = useCheckerPosition();
 
   useEffect(() => {
     if (isSelected) {
@@ -74,11 +76,21 @@ const Point: React.FC<PointProps> = ({
 
   const AnimatedSvg = Animated.createAnimatedComponent(Svg);
   const AnimatedPolygon = Animated.createAnimatedComponent(Polygon);
+  const AnimatedCheckerWrapper = Animated.createAnimatedComponent(View);
+
+  const handleLayout = (event: any) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/e69eed9a-26a8-4b0c-af5e-6b7b0a93fd43',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Point.tsx:handleLayout',message:'Point layout measured (raw)',data:{pointId:point.id,x,y,width,height},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    setPosition(`point-${point.id}`, { x, y, width, height });
+  };
 
   return (
     <Pressable
       style={styles.pointWrapper}
       onPress={() => onPress(point.id)}
+      onLayout={handleLayout}
       accessibilityLabel={`Point ${point.id}, ${checkerCount} ${isPlayer1 ? 'white' : 'black'} checker${checkerCount !== 1 ? 's' : ''}`}
       accessibilityRole="button"
       accessibilityHint={isSelected ? 'Selected point' : isAvailable ? 'Available destination' : ''}
@@ -116,18 +128,11 @@ const Point: React.FC<PointProps> = ({
               : { bottom: stackOffset }
             ),
           } : {};
-          
-          const AnimatedCheckerWrapper = Animated.createAnimatedComponent(View);
-          const animatedStyle = useAnimatedStyle(() => {
-            return {
-              transform: [{ scale: withSpring(1, { damping: 15, stiffness: 150 }) }],
-            };
-          });
 
           return (
             <AnimatedCheckerWrapper
               key={`${point.id}-${idx}`}
-              style={[styles.checkerWrapper, stackStyle, animatedStyle]}
+              style={[styles.checkerWrapper, stackStyle]}
             >
               {isPlayer1 ? (
                 <WhiteChecker width={28} height={28} />

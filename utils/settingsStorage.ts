@@ -7,6 +7,7 @@ export interface GameSettings {
   player1Name: string;
   player2Name: string;
   hapticEnabled: boolean;
+  showMoveHints: boolean;
 }
 
 const SETTINGS_KEY = 'backgammon_settings';
@@ -17,6 +18,7 @@ const DEFAULT_SETTINGS: GameSettings = {
   player1Name: 'White',
   player2Name: 'Black',
   hapticEnabled: true,
+  showMoveHints: true,
 };
 
 export const loadSettings = async (): Promise<GameSettings> => {

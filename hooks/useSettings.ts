@@ -28,7 +28,8 @@ export const useSettings = () => {
     
     const success = await updateSetting(key, value);
     if (success) {
-      setSettings(prev => prev ? { ...prev, [key]: value } : null);
+      const newSettings = settings ? { ...settings, [key]: value } : null;
+      setSettings(newSettings);
     }
     return success;
   }, [settings]);
@@ -41,10 +42,22 @@ export const useSettings = () => {
     return success;
   }, []);
 
+  const reload = useCallback(async () => {
+    try {
+      const loadedSettings = await loadSettings();
+      setSettings(loadedSettings);
+      return true;
+    } catch (error) {
+      console.error('Error reloading settings:', error);
+      return false;
+    }
+  }, []);
+
   return {
     settings,
     loading,
     update,
     save,
+    reload,
   };
 };

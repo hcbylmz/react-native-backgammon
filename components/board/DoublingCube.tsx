@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { BOARD_LAYOUT } from '../../utils/boardLayout';
 
 interface DoublingCubeProps {
   cubeValue: number;
@@ -78,15 +79,16 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 8,
+    marginVertical: BOARD_LAYOUT.DOUBLING_CUBE_MARGIN_VERTICAL,
+    width: BOARD_LAYOUT.CENTER_COLUMN_WIDTH,
   },
   cubeContainer: {
     alignItems: 'center',
-    gap: 4,
+    gap: BOARD_LAYOUT.DOUBLING_CUBE_GAP,
   },
   cube: {
-    width: 50,
-    height: 50,
+    width: BOARD_LAYOUT.DOUBLING_CUBE_SIZE,
+    height: BOARD_LAYOUT.DOUBLING_CUBE_SIZE,
     backgroundColor: '#8B4513',
     borderRadius: 8,
     borderWidth: 2,

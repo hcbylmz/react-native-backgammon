@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { GameScore } from '../types/game';
+import BaseModal from './ui/BaseModal';
 
 interface GameStatistics {
   moves: number;
@@ -19,6 +20,7 @@ interface WinModalProps {
 }
 
 const WinModal: React.FC<WinModalProps> = ({ visible, statistics, score, onClose, onNewGame }) => {
+
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -27,6 +29,7 @@ const WinModal: React.FC<WinModalProps> = ({ visible, statistics, score, onClose
 
   const winnerName = statistics.winner && statistics.winner > 0 ? 'White' : 'Black';
   const winnerColor = statistics.winner && statistics.winner > 0 ? '#FFFFFF' : '#000000';
+  const titleColor = statistics.winner && statistics.winner > 0 ? '#8B4513' : '#FFFFFF';
   
   const getResultTypeLabel = (resultType: string): string => {
     switch (resultType) {
@@ -40,20 +43,16 @@ const WinModal: React.FC<WinModalProps> = ({ visible, statistics, score, onClose
   };
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
-      presentationStyle="overFullScreen"
-      supportedOrientations={['landscape-left', 'landscape-right']}
+      onClose={onClose}
+      title={`🎉 ${winnerName} Wins! 🎉`}
+      animationType="none"
+      headerBackgroundColor={winnerColor}
+      headerStyle={styles.winHeader}
+      containerStyle={styles.modalContainer}
+      titleStyle={[styles.winnerText, { color: titleColor }]}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <View style={[styles.header, { backgroundColor: winnerColor }]}>
-            <Text style={styles.winnerText}>🎉 {winnerName} Wins! 🎉</Text>
-          </View>
-
           <View style={styles.content}>
             <Text style={styles.statsTitle}>Game Statistics</Text>
 
@@ -104,46 +103,29 @@ const WinModal: React.FC<WinModalProps> = ({ visible, statistics, score, onClose
             >
               <Text style={styles.buttonText}>New Game</Text>
             </Pressable>
-            <Pressable
-              style={[styles.button, styles.closeButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.buttonText}>Close</Text>
-            </Pressable>
           </View>
-        </View>
-      </View>
-    </Modal>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   modalContainer: {
-    backgroundColor: '#D2B48C',
-    borderRadius: 20,
-    padding: 0,
     width: '80%',
     maxWidth: 400,
-    borderWidth: 3,
-    borderColor: '#8B4513',
+    padding: 0,
     overflow: 'hidden',
   },
-  header: {
+  winHeader: {
     padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderBottomWidth: 0,
+    marginBottom: 0,
   },
   winnerText: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#8B4513',
     textAlign: 'center',
+    flex: 1,
   },
   content: {
     padding: 20,
@@ -191,9 +173,6 @@ const styles = StyleSheet.create({
   },
   newGameButton: {
     backgroundColor: '#8B4513',
-  },
-  closeButton: {
-    backgroundColor: '#654321',
   },
   buttonText: {
     color: '#FFFFFF',

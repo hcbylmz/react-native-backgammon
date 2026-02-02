@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from 'react-native';
 import { useSettings } from '../../hooks/useSettings';
 import { GameSettings } from '../../utils/settingsStorage';
+import BaseModal from '../ui/BaseModal';
 
 interface SettingsScreenProps {
   visible: boolean;
@@ -21,24 +22,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   }, [settings]);
 
-  if (loading || !localSettings) {
-    return (
-      <Modal 
-        visible={visible} 
-        transparent 
-        animationType="fade"
-        presentationStyle="overFullScreen"
-        supportedOrientations={['landscape-left', 'landscape-right']}
-      >
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
-            <Text>Loading settings...</Text>
-          </View>
-        </View>
-      </Modal>
-    );
-  }
-
   const handleSettingChange = async <K extends keyof GameSettings>(
     key: K,
     value: GameSettings[K]
@@ -46,25 +29,31 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
     if (localSettings) {
       const updated = { ...localSettings, [key]: value };
       setLocalSettings(updated);
-      // Apply setting immediately for instant feedback
       await update(key, value);
     }
   };
 
+  if (loading || !localSettings) {
+    return (
+      <BaseModal
+        visible={visible}
+        onClose={onClose}
+        title="Settings"
+        animationType="none"
+      >
+        <Text>Loading settings...</Text>
+      </BaseModal>
+    );
+  }
+
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-      presentationStyle="overFullScreen"
-      supportedOrientations={['landscape-left', 'landscape-right']}
+      onClose={onClose}
+      title="Settings"
+      animationType="none"
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.title}>Settings</Text>
-          
-          <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             {/* Gameplay Settings Section */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -91,6 +80,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   placeholderTextColor="#999"
                 />
               </View>
+              <Pressable
+                style={[styles.toggleButton, localSettings.showMoveHints && styles.toggleButtonActive]}
+                onPress={() => handleSettingChange('showMoveHints', !localSettings.showMoveHints)}
+              >
+                <View style={styles.toggleContent}>
+                  <Text style={styles.toggleText}>Show Move Hints</Text>
+                  <View style={[styles.toggleSwitch, localSettings.showMoveHints && styles.toggleSwitchActive]}>
+                    <Text style={styles.toggleSwitchText}>{localSettings.showMoveHints ? 'ON' : 'OFF'}</Text>
+                  </View>
+                </View>
+              </Pressable>
             </View>
 
             {/* Display Settings Section */}
@@ -161,45 +161,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </Pressable>
             </View>
           </ScrollView>
-
-          <View style={styles.buttonRow}>
-            <Pressable
-              style={[styles.button, styles.closeButton]}
-              onPress={onClose}
-            >
-              <Text style={styles.buttonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Modal>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    backgroundColor: '#D2B48C',
-    borderRadius: 20,
-    padding: 20,
-    width: '90%',
-    maxWidth: 500,
-    maxHeight: '80%',
-    borderWidth: 3,
-    borderColor: '#8B4513',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#8B4513',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
   scrollView: {
     maxHeight: 500,
   },
@@ -314,30 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#654321',
     fontWeight: '600',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 2,
-    borderTopColor: '#8B4513',
-  },
-  button: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 50,
-  },
-  closeButton: {
-    backgroundColor: '#8B4513',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 });
 

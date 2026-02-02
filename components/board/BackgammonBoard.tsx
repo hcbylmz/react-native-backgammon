@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, Text } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { View, StyleSheet } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { BackgammonBoardProps } from '../../types/game';
 import { useGameState } from '../../hooks/useGameState';
@@ -13,6 +13,7 @@ import BearingOffArea from './BearingOffArea';
 import DoublingCube from './DoublingCube';
 import SaveLoadMenu from '../ui/SaveLoadMenu';
 import GameInfoModal from '../ui/GameInfoModal';
+import ActionButtonPanel from '../ui/ActionButtonPanel';
 import SettingsScreen from '../settings/SettingsScreen';
 import RulesScreen from '../help/RulesScreen';
 import FAQScreen from '../help/FAQScreen';
@@ -25,8 +26,12 @@ import { useSound } from '../../hooks/useSound';
 import { useHaptic } from '../../hooks/useHaptic';
 import { useGameTimer } from '../../hooks/useGameTimer';
 import { useSettings } from '../../hooks/useSettings';
+import { BOARD_LAYOUT } from '../../utils/boardLayout';
+import { CheckerPositionProvider, useCheckerPosition } from '../../contexts/CheckerPositionContext';
+import { CheckerAnimationProvider, useCheckerAnimation } from '../../contexts/CheckerAnimationContext';
+import AnimatedCheckerOverlay from './AnimatedCheckerOverlay';
 
-const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
+const BackgammonBoardInner: React.FC<BackgammonBoardProps> = ({ points }) => {
   const gameState = useGameState(points);
   const dice = useDice();
   const doublingCube = useDoublingCube();
@@ -60,27 +65,50 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
     blackBorneOff: gameState.blackBorneOff,
   });
 
+  const { animateMove } = useCheckerAnimation();
+  const { getPosition, setContainerOffset } = useCheckerPosition();
+  const containerRef = useRef<View>(null);
+
+  const handleContainerLayout = useCallback((event: any) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/e69eed9a-26a8-4b0c-af5e-6b7b0a93fd43',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'BackgammonBoard.tsx:handleContainerLayout',message:'Container layout measured',data:{x,y,width,height},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    setContainerOffset({ x, y });
+  }, [setContainerOffset]);
+
   const { handlePointPress, handleBearingOffPress } = usePointHandlers(
     gameState,
     dice,
     moveValidation,
-    moveHistory
+    moveHistory,
+    animateMove,
+    getPosition
   );
 
   useEffect(() => {
     gameState.setCubeValue(doublingCube.cubeValue);
   }, [doublingCube.cubeValue]);
 
+  const handleRollDice = useCallback(() => {
+    dice.rollDice();
+    sound.playDiceRoll();
+  }, [dice, sound]);
+
+  const lastRolledPlayerRef = useRef<number | null>(null);
   useEffect(() => {
     if (gameState.currentPlayer !== 0 && !gameState.gameEnded && doublingCube.pendingDouble === null) {
-      dice.rollDice();
-      sound.playDiceRoll();
-      gameTimer.resetMoveTimer();
-      if (gameState.currentPlayer === 1) {
-        setTurnNumber(prev => prev + 1);
+      if (lastRolledPlayerRef.current !== gameState.currentPlayer) {
+        lastRolledPlayerRef.current = gameState.currentPlayer;
+        dice.resetDice();
+        handleRollDice();
+        gameTimer.resetMoveTimer();
+        if (gameState.currentPlayer === 1) {
+          setTurnNumber(prev => prev + 1);
+        }
       }
     }
-  }, [gameState.currentPlayer, gameState.gameEnded, doublingCube.pendingDouble]);
+  }, [gameState.currentPlayer, gameState.gameEnded, doublingCube.pendingDouble, handleRollDice]);
 
   const checkLegalMovesAfterDiceSet = (newDice1: number, newDice2: number) => {
     setTimeout(() => {
@@ -300,9 +328,19 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
     () => moveValidation.getForcedMoveInfo(),
     [dice.dice1, dice.dice2, dice.usedDice, gameState.boardPoints, gameState.currentPlayer]
   );
+  
+  const showMoveHintsRaw = settings.settings?.showMoveHints;
+  const showMoveHintsValue = React.useMemo(() => {
+    return showMoveHintsRaw ?? true;
+  }, [showMoveHintsRaw]);
   const bestMoveHint = React.useMemo(
-    () => moveValidation.getBestMoveHint(),
-    [dice.dice1, dice.dice2, dice.usedDice, gameState.boardPoints, gameState.currentPlayer]
+    () => {
+      if (!showMoveHintsValue) {
+        return null;
+      }
+      return moveValidation.getBestMoveHint();
+    },
+    [dice.dice1, dice.dice2, dice.usedDice, gameState.boardPoints, gameState.currentPlayer, showMoveHintsValue]
   );
   
   useEffect(() => {
@@ -324,7 +362,8 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
 
   return (
     <View style={styles.outerContainer}>
-      <View style={styles.container}>
+      <View ref={containerRef} style={styles.container} onLayout={handleContainerLayout}>
+
         <View style={styles.leftHalf}>
           <View style={styles.topHalf}>
             <View style={styles.pointsRow}>
@@ -375,9 +414,7 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
             hasCrashed={gameState.hasCrashedPieces(gameState.currentPlayer)}
             gameEnded={gameState.gameEnded}
             onBarPress={handleBarPress}
-            onRollDice={dice.rollDice}
-            onSetDice={handleSetDice}
-            onResetGame={handleResetGame}
+            onRollDice={handleRollDice}
           />
           <DoublingCube
             cubeValue={doublingCube.cubeValue}
@@ -429,7 +466,7 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
           </View>
         </View>
       </View>
-
+      <AnimatedCheckerOverlay />
       <BearingOffArea
         whiteBorneOff={gameState.whiteBorneOff}
         blackBorneOff={gameState.blackBorneOff}
@@ -438,52 +475,23 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
         onPress={handleBearingOffPress}
       />
 
-      <Pressable
-        style={styles.infoIconButton}
-        onPress={() => setShowGameInfo(true)}
-      >
-        <Text style={styles.infoIconText}>ℹ️</Text>
-      </Pressable>
-
-      <View style={styles.uiPanel}>
-        <View style={styles.actionButtons}>
-          {moveHistory.canUndo && (
-            <Pressable
-              style={styles.undoButton}
-              onPress={handleUndo}
-            >
-              <Text style={styles.undoButtonText}>Undo</Text>
-            </Pressable>
-          )}
-          <Pressable
-            style={styles.saveLoadButton}
-            onPress={() => setShowSaveLoadMenu(true)}
-          >
-            <Text style={styles.undoButtonText}>Save/Load</Text>
-          </Pressable>
-          <Pressable
-            style={styles.settingsButton}
-            onPress={() => setShowSettings(true)}
-          >
-            <Text style={styles.undoButtonText}>Settings</Text>
-          </Pressable>
-          <Pressable
-            style={styles.helpButton}
-            onPress={() => setShowRules(true)}
-          >
-            <Text style={styles.undoButtonText}>Rules</Text>
-          </Pressable>
-          <Pressable
-            style={styles.helpButton}
-            onPress={() => setShowFAQ(true)}
-          >
-            <Text style={styles.undoButtonText}>FAQ</Text>
-          </Pressable>
-        </View>
-      </View>
+      <ActionButtonPanel
+        onInfoPress={() => setShowGameInfo(true)}
+        onSettingsPress={() => setShowSettings(true)}
+        onHistoryPress={() => setShowGameInfo(true)}
+        onRulesPress={() => setShowRules(true)}
+        onFAQPress={() => setShowFAQ(true)}
+        onSaveLoadPress={() => setShowSaveLoadMenu(true)}
+        onUndoPress={handleUndo}
+        canUndo={moveHistory.canUndo}
+      />
 
       <GameStateDebug
         onSetGameState={gameState.setGameState}
+        dice1={dice.dice1}
+        dice2={dice.dice2}
+        onSetDice={handleSetDice}
+        onResetGame={handleResetGame}
       />
 
       <WinModal
@@ -522,7 +530,10 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
 
       <SettingsScreen
         visible={showSettings}
-        onClose={() => setShowSettings(false)}
+        onClose={() => {
+          setShowSettings(false);
+          settings.reload();
+        }}
       />
 
       <RulesScreen
@@ -535,6 +546,16 @@ const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
         onClose={() => setShowFAQ(false)}
       />
     </View>
+  );
+};
+
+const BackgammonBoard: React.FC<BackgammonBoardProps> = ({ points }) => {
+  return (
+    <CheckerPositionProvider>
+      <CheckerAnimationProvider>
+        <BackgammonBoardInner points={points} />
+      </CheckerAnimationProvider>
+    </CheckerPositionProvider>
   );
 };
 
@@ -558,6 +579,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#8B4513',
     alignSelf: 'center',
+    position: 'relative',
   },
   leftHalf: {
     flex: 1,
@@ -586,86 +608,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  infoIconButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#8B4513',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#654321',
-    zIndex: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  infoIconText: {
-    fontSize: 24,
-    color: '#FFFFFF',
-  },
-  uiPanel: {
-    position: 'absolute',
-    top: 60,
-    right: 10,
-    gap: 8,
-    zIndex: 10,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  undoButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#8B4513',
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#654321',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveLoadButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#4CAF50',
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#2E7D32',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  settingsButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#2196F3',
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#1565C0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  helpButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: '#FF9800',
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#F57C00',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  undoButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
+    width: BOARD_LAYOUT.CENTER_COLUMN_WIDTH,
+    flexShrink: 0,
   },
 });
 

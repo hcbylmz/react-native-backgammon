@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SavedGameState } from '../../utils/gameStorage';
+import BaseModal from './BaseModal';
 
 interface SaveLoadMenuProps {
   visible: boolean;
@@ -21,6 +22,7 @@ const SaveLoadMenu: React.FC<SaveLoadMenuProps> = ({
   onDelete,
   onClose,
 }) => {
+
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp);
     return date.toLocaleString();
@@ -31,19 +33,14 @@ const SaveLoadMenu: React.FC<SaveLoadMenuProps> = ({
   };
 
   return (
-    <Modal
+    <BaseModal
       visible={visible}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={onClose}
-      presentationStyle="overFullScreen"
-      supportedOrientations={['landscape-left', 'landscape-right']}
+      onClose={onClose}
+      title="Save / Load Game"
+      animationType="none"
+      containerStyle={styles.modalContainer}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.title}>Save / Load Game</Text>
-          
-          <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView}>
             {Array.from({ length: 5 }, (_, i) => i + 1).map(slot => {
               const gameInfo = getSlotInfo(slot);
               const isEmpty = !gameInfo;
@@ -96,42 +93,15 @@ const SaveLoadMenu: React.FC<SaveLoadMenuProps> = ({
               );
             })}
           </ScrollView>
-          
-          <Pressable
-            style={[styles.button, styles.closeButton]}
-            onPress={onClose}
-          >
-            <Text style={styles.buttonText}>Close</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
+    </BaseModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   modalContainer: {
-    backgroundColor: '#D2B48C',
-    borderRadius: 20,
-    padding: 20,
     width: '80%',
     maxWidth: 400,
     maxHeight: '80%',
-    borderWidth: 3,
-    borderColor: '#8B4513',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#8B4513',
-    marginBottom: 16,
-    textAlign: 'center',
   },
   scrollView: {
     maxHeight: 400,
@@ -181,11 +151,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     backgroundColor: '#F44336',
-  },
-  closeButton: {
-    backgroundColor: '#8B4513',
-    marginTop: 16,
-    width: '100%',
   },
   buttonText: {
     color: '#FFFFFF',
